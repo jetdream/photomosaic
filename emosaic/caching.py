@@ -1,6 +1,7 @@
 import os
 import glob
 import six
+import hashlib
 
 if six.PY2:
 	import cPickle as pickle
@@ -115,13 +116,25 @@ class MosaicCacheConfig(object):
         self.cache_pattern = cache_pattern
 
     def _hash(self):
+        """
+        MD5 hash the parameters to create a unique identifier
+        for this cache config.
+        """
+        
+        # Calc MD5  hash of the paths
+        md5_hash = hashlib.md5()
         paths_tuple = tuple(self.paths)
-        hash_tuple = (
-            paths_tuple,
-            self.height, self.width, self.nchannels,
-            self.detect_faces
-        )
-        return str(hash(hash_tuple))
+        for p in paths_tuple:
+            md5_hash.update(p.encode('utf-8'))
+
+        # Add the rest of the parameters: height, width, nchannels, detect_faces
+        md5_hash.update(str(self.height).encode('utf-8'))
+        md5_hash.update(str(self.width).encode('utf-8'))
+        md5_hash.update(str(self.nchannels).encode('utf-8'))
+        md5_hash.update(str(self.detect_faces).encode('utf-8'))
+
+        str_hash = md5_hash.hexdigest() 
+        return str_hash
 
     def list_cache_files(self):
         return glob.glob(os.path.join(self.cache_dir, self.cache_pattern))
