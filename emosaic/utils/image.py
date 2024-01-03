@@ -3,7 +3,6 @@ import numpy as np
 import cv2
 import faiss
 
-from emosaic.image import Image
 
 
 def rotate_bound(image, angle):
@@ -48,6 +47,8 @@ def load_and_vectorize_image(args):
       returns (None, None) if the aspect ratio of the image doesn't match 
       the argument aspect_ratio given
   """
+  from emosaic.image import Image
+
   path, h, w, c, aspect_ratio, use_detect_faces = args
   image = Image(path, detect_faces=use_detect_faces)
   img = image.compute_statistics()
