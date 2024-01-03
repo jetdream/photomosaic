@@ -22,6 +22,7 @@ def mosaicify(
         uniform_k=True,
         no_duplicates=True,
     ):
+    
     try:
         rect_starts = divide_image_rectangularly(target_image, h_pixels=tile_h, w_pixels=tile_w)
         mosaic = np.zeros(target_image.shape)
@@ -34,6 +35,9 @@ def mosaicify(
         timings = []
         if verbose:
             print("We have %d tiles to assign" % len(rect_starts))
+
+        # progress percentage
+        progress = 0        
 
         seen_idx = { -1 }
         for (j, (x, y)) in enumerate(rect_starts):
@@ -93,6 +97,12 @@ def mosaicify(
             elapsed = time.time() - starttime
             timings.append(elapsed)
 
+            # print progress
+            new_progress = int(100 * (j + 1) / float(len(rect_starts)))
+            if new_progress > progress:
+                progress = new_progress
+                print("Progress: %d%%" % progress)
+
         # should we adjust opacity? 
         if opacity > 0:
             mosaic = cv2.addWeighted(target_image, opacity, mosaic.astype(np.uint8), 1 - opacity, 0)
@@ -107,7 +117,7 @@ def mosaicify(
         # show some results
         arr = np.array(timings)
         if verbose:
-            print("Timings: mean=%.5f, stddev=%.5f" % (arr.mean(), arr.std()))
+            print("Timings: mean=%.5f, stddev=%.5f, sum=%.5f" % (arr.mean(), arr.std(), arr.sum()))
         return mosaic, rect_starts, arr
 
     except Exception:
