@@ -1,5 +1,5 @@
 # https://github.com/plippe/faiss-docker/blob/master/Dockerfile
-FROM nvidia/cuda:8.0-devel-ubuntu16.04
+FROM nvidia/cuda:12.3.1-devel-ubuntu20.04
 
 ENV FAISS_CPU_OR_GPU "cpu"
 ENV FAISS_VERSION "1.3.0"
@@ -7,15 +7,24 @@ ENV OPENCV_VERSION "3.4.8"
 
 RUN apt-get update && apt-get install -y curl bzip2 libgl1-mesa-glx
 
-RUN curl https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh > /tmp/conda.sh
-RUN bash /tmp/conda.sh -b -p /opt/conda && \
-    /opt/conda/bin/conda update -n base conda && \
-    /opt/conda/bin/conda install -y -c pytorch faiss-${FAISS_CPU_OR_GPU}=${FAISS_VERSION} && \
-    apt-get remove -y --auto-remove curl bzip2 && \
-    apt-get clean && \
-    rm -fr /tmp/conda.sh
+# avoid asking for timezone and geographical area
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN /opt/conda/bin/conda install -y -c conda-forge opencv=$OPENCV_VERSION
+# set bash as current shell
+RUN chsh -s /bin/bash
+SHELL ["/bin/bash", "-c"]
+
+# install anaconda
+RUN apt-get install -y wget bzip2 ca-certificates libglib2.0-0 libxext6 libsm6 libxrender1 git mercurial subversion && \
+        apt-get clean
+RUN wget --quiet https://repo.anaconda.com/archive/Anaconda3-2020.02-Linux-x86_64.sh -O ~/anaconda.sh && \
+        /bin/bash ~/anaconda.sh -b -p /opt/conda && \
+        rm ~/anaconda.sh && \
+        ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+        echo ". /opt/conda/etc/profile.d/conda.sh" >> ~/.bashrc && \
+        find /opt/conda/ -follow -type f -name '*.a' -delete && \
+        find /opt/conda/ -follow -type f -name '*.js.map' -delete && \
+        /opt/conda/bin/conda clean -afy
 
 ENV PATH="/opt/conda/bin:${PATH}"
 
@@ -29,19 +38,25 @@ RUN apt-get update -y && \
         yasm \
         pkg-config \
         libswscale-dev \
-        libtbb2 \
+        libtbb2
+
+RUN apt-get update -y && \
+        apt-get install -y \        
         libtbb-dev \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
         libavformat-dev \
         libpq-dev \
-        libopenblas-dev \
+        libopenblas-dev
+
+RUN apt-get update -y && \
+        apt-get install -y \        
         liblapack3 \
         python-dev \
         swig \
         git \
-        python-pip \
+        python3-pip \
         tree \
         gifsicle \
         imagemagick \
