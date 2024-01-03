@@ -1,4 +1,4 @@
-numpy==1.15.1
+numpy==1.26.3
 pytest==3.8.0 
 ipython[notebook]==5.8.0
 scipy==1.1.0
@@ -6,9 +6,9 @@ bs4==0.0.1
 scikit-learn==0.19.2
 boto3==1.9.4
 requests==2.18.4
-matplotlib==2.2.3
-cython==0.28.5
-ipdb==0.11
+matplotlib==3.8.2
+cython==3.0.7
+ipdb==0.13.13
 scikit-image==0.14.0
 moviepy==0.2.3.5
 tqdm==4.26.0
