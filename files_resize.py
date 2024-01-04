@@ -61,7 +61,7 @@ def resize_files_aspect_ratio(src_folder, dst_folder, aspect_ratio, threshold=0.
        
     
 
-resize_files_aspect_ratio("E:/Media-projects/flat1/", "E:/Media-projects/flat1-43/", 3/4, 0.4);
+resize_files_aspect_ratio("E:/Media-projects/flat/", "E:/Media-projects/flat-43-full/", 3/4, 0.4);
 
 
 
