@@ -1,5 +1,4 @@
 import os
-import argparse
 
 import cv2
 import numpy as np
@@ -7,49 +6,41 @@ import matplotlib.pyplot as plt
 
 from emosaic.utils.indexing import index_images
 from emosaic import mosaicify
+from types import SimpleNamespace
 
 
 """
-Example usage:
-
-    $ python mosaic.py \
-        --target "media/example/beach.jpg" \
-        --savepath "media/output/%s-mosaic-scale-%d.jpg" \
-        --codebook-dir media/pics/ \
-        --scale 12 \
-        --height-aspect 4 \
-        --width-aspect 3 \
-        --opacity 0.0 \
-        --detect-faces
+Mosaic starter
 """
-parser = argparse.ArgumentParser()
 
-# set defaults
-parser.set_defaults(
-    target='media/example/Tatiana.JPG',
-    codebook_dir='E:/Media-projects/flat1-43/',
-    savepath='media/output/%s-mosaic-scale-%d.jpg',
-    scale=30
-)
+args = SimpleNamespace()
 
-# required
-parser.add_argument("--codebook-dir", dest='codebook_dir', type=str, required=False, help="Source folder of images")
-parser.add_argument("--savepath", dest='savepath', type=str, required=False, help="Where to save image to. Scale/filename is used in formatting.")
-parser.add_argument("--target", dest='target', type=str, required=False, help="Image to make mosaic from")
-parser.add_argument("--scale", dest='scale', type=int, required=False, help="How large to make tiles")
+# Paths
+args.target = 'media/example/Shasta-32x48.jpg'  # Image to make mosaic from, resulting mosaic image will have the same resolution as this image
+args.codebook_dir = 'E:/Media-projects/flat-full-43/'  # Source folder of images
+# args.codebook_dir = 'E:/Media-projects/flat-1k-43/'  # Source folder of images
+args.savepath = 'media/output/'  # Where to save image to. Scale/filename is used in formatting.
 
-# optional
-parser.add_argument("--best-k", dest='best_k', type=int, default=1, help="Choose tile from top K best matches")
-parser.add_argument("--no-trim", dest='no_trim', action='store_true', default=False, help="If we shouldn't trim around the outside")
-parser.add_argument("--detect-faces", dest='detect_faces', action='store_true', default=False, help="If we should only include pictures with faces in them")
-parser.add_argument("--opacity", dest='opacity', type=float, default=0.0, help="Opacity of the original photo")
-parser.add_argument("--randomness", dest='randomness', type=float, default=0.0, help="Probability to use random tile")
-parser.add_argument("--height-aspect", dest='height_aspect', type=float, default=3.0, help="Height aspect")
-parser.add_argument("--width-aspect", dest='width_aspect', type=float, default=4.0, help="Width aspect")
-parser.add_argument("--vectorization-factor", dest='vectorization_factor', type=float, default=1., 
-    help="Downsize the image by this much before vectorizing")
+# Mosaic parameters
+args.height_aspect = 3.0  # Height aspect
+args.width_aspect = 4.0  # Width aspect
+args.scale = 75  # How large to make tiles, resulting size of the tile image is (scale * height_aspect, scale * width_aspect)
 
-args = parser.parse_args()
+#  Strategy for choosing tiles
+args.best_k = 50  # Choose tile from top K best matches
+args.no_duplicates = True  # If we should avoid duplicates
+args.uniform_k = True  # If we should use the same K for all tiles (ignored when no_duplicates=True)
+args.randomness = 0.0  # Probability to use random tile (does not honor no_duplicates)
+
+args.no_trim = False  # If we shouldn't trim around the outside
+args.detect_faces = False  # If we should only include pictures with faces in them
+args.opacity = 0.3  # Opacity of the original photo
+args.vectorization_factor = 1  # Downsize the image by this much before vectorizing
+
+
+
+# =========================================
+
 
 print("=== Creating Mosaic Image ===")
 print("Images=%s, target=%s, scale=%d, aspect_ratio=%.4f, vectorization=%d, randomness=%.2f, faces=%s" % (
@@ -72,6 +63,7 @@ tile_index, _, tile_images = index_images(
     vectorization_scaling_factor=args.vectorization_factor,
     caching=True,
     use_detect_faces=args.detect_faces,
+    nprocesses = os.cpu_count()
 )
 
 print("Using %d tile codebook images..." % len(tile_images))
@@ -83,7 +75,11 @@ mosaic, rect_starts, _ = mosaicify(
     randomness=args.randomness,
     opacity=args.opacity,
     best_k=args.best_k,
-    trim=not args.no_trim)
+    trim=not args.no_trim,
+    verbose=1,
+    uniform_k=args.uniform_k,
+    no_duplicates=args.no_duplicates,
+)
 
 # convert to 8 bit unsigned integers
 mosaic_img = mosaic.astype(np.uint8)
@@ -97,7 +93,10 @@ except:
 
 # save to disk
 filename = os.path.basename(args.target).split('.')[0]
-savepath = args.savepath % (filename, args.scale)
+# compose filename to save including all args like '%s-mosaic-scale-%d-k%.2f....jpg'
+save_filename = '%s-mosaic.scale-%d.best_k-%d.aspect-%.2f.opacity-%.2f.vectf-%.2f.jpg' % (
+    filename, args.scale, args.best_k, args.height_aspect / args.width_aspect, args.opacity, args.vectorization_factor)
+savepath = args.savepath + '/' + save_filename
 print("Writing mosaic image to '%s' ..." % savepath)
 cv2.imwrite(savepath, mosaic_img)
 
