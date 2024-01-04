@@ -71,8 +71,8 @@ class EmbeddingsCacheConfig(object):
                 )
                 pickle.dump(data, f, protocol=2)
             return True
-        except Exception:
-            print("Failed to cache index!")
+        except Exception as e:
+            print("Failed to cache index! %s" % e)
             return False
 
 
@@ -190,6 +190,6 @@ class MosaicCacheConfig(object):
                 )
                 pickle.dump(data, f, protocol=2)
             return True
-        except Exception:
-            print("Failed to cache index!")
+        except Exception as e:
+            print("Failed to cache index! %s" % e)
             return False
